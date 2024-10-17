@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador de Textos</title>
+    <style>
+        body {
+            background-color: #ADD8E6; /* Fondo azul claro */
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .texto {
+            width: 45%;
+            height: 300px;
+            border: 1px solid #ccc;
+            background-color: #fff; /* Ventanas blancas */
+            padding: 10px;
+            overflow-y: auto; /* Permitir desplazamiento si hay mucho texto */
+        }
+        .botones {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .algoritmos {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        .highlight {
+            background-color: yellow;
+        }
+        .highlight2 {
+            background-color: greenyellow;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+            width: 100%;
+            max-width: 300px;
+            background-color: #fff;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        li {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #ccc;
+        }
+        li:last-child {
+            border-bottom: none;
+        }
+        .resultado-lcs {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            width: 100%;
+        }
+    </style>
+    <script>
+        async function getSuggestions() {
+            const prefix = document.getElementById('prefix').value.trim();
+            const suggestionsList = document.getElementById('suggestions');
+            suggestionsList.innerHTML = '';
+    
+            if (prefix.length > 0) {
+                try {
+                    const response = await fetch(`/autocomplete?prefix=${prefix}`);
+                    const data = await response.json();
+                    const suggestions = data.suggestions;
+    
+                    suggestions.forEach(suggestion => {
+                        const li = document.createElement('li');
+                        li.textContent = suggestion;
+                        li.className = 'suggestion';
+                        suggestionsList.appendChild(li);
+                    });
+                } catch (error) {
+                    console.error('Error fetching suggestions:', error);
+                }
+            }
+        }
+    </script>    
+</head>
+
+<body>
+    <h1>Visualizador de Textos</h1>
+    <h1>Subir archivo de texto</h1>
+    <form method="POST" action="/upload" enctype="multipart/form-data">
+        <label for="file1">Sube el primer archivo (Texto 1):</label>
+        <input type="file" name="file1" accept=".txt" required><br><br>
+    
+        <label for="file2">Sube el segundo archivo (Texto 2):</label>
+        <input type="file" name="file2" accept=".txt" required><br><br>
+    
+        <button type="submit">Subir Archivos y Procesar</button>
+    </form>
+
+    <div class="container">
+        <div class="texto" id="texto1">
+            <h2>Texto Cargado 1</h2>
+            <p>{{ texto1|safe }}</p> 
+        </div>
+        <div class="texto" id="texto2">
+            <h2>Texto Cargado 2</h2>
+            <p>{{ texto2|safe }}</p>
+        </div>
+    </div>
+    
+    <div class="botones">
+        <div class="algoritmos">
+            <form method="POST" action="/z_search">
+                <h1>Algoritmo Z</h1>
+                <p>Buscar patrón en archivo 1</p>
+                <input type="text" name="patron" placeholder="Ingrese el patrón a buscar" required />
+                <button type="submit">Buscar</button>
+            </form>
+
+            <form method="POST" action="/lcs">
+                <h1>Algoritmo LCS</h1>
+                <p>Subcadena común más larga</p>
+                <button type="submit">Buscar LCS</button>
+            </form>
+
+            <form action="/manacher_search" method="post">
+                <h1>Algoritmo Manacher</h1>
+                <p>Busqueda de palíndromos</p>
+                <button type="submit">Buscar palíndromo</button>
+            </form>
+                    
+            <div>
+                <h1>Tries - Autocompletado</h1>
+                <label for="prefix">Ingrese un prefijo:</label>
+                <input type="text" id="prefix" oninput="getSuggestions()" placeholder="Ingrese un prefijo para obtener sugerencias">
+                <ul id="suggestions" class="suggestions"></ul>                
+            </div>
+        </div>
+
+        <div class="resultado-lcs">
+            <h2>Resultado LCS:</h2>
+            <p>{{ lcs_result|safe }}</p>
+        </div>
+
+    </div>
+</body>
+</html>
