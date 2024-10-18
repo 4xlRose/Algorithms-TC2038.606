@@ -22,6 +22,7 @@ def allowed_file(filename):
 def leer_archivo(archivo):
     with open(archivo, 'r', encoding='utf-8') as f:
         return f.read()
+    return ''
 
 
 #region Algoritmo Z
@@ -190,40 +191,48 @@ def index():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    if 'file1' not in request.files or 'file2' not in request.files:
-        return 'Ambos archivos deben ser enviados'
+    # Verificar si se ha subido al menos el archivo 1
+    if 'file1' not in request.files:
+        return 'El archivo 1 debe ser enviado'
 
     file1 = request.files['file1']
-    file2 = request.files['file2']
+    file2 = request.files.get('file2')  # Usar get para evitar un error si no se sube file2
 
-    if file1.filename == '' or file2.filename == '':
-        return 'Ambos archivos deben ser seleccionados'
+    if file1.filename == '':
+        return 'El archivo 1 debe ser seleccionado'
 
-    if file1 and allowed_file(file1.filename) and file2 and allowed_file(file2.filename):
-        # Guardar los archivos con nombres seguros
+    # Comprobar si el archivo 1 es válido
+    if file1 and allowed_file(file1.filename):
+        # Guardar el archivo 1 con un nombre seguro
         filename1 = secure_filename(file1.filename)
-        filename2 = secure_filename(file2.filename)
-
-        # Guardar los archivos en la carpeta de subida
         filepath1 = os.path.join(app.config['UPLOAD_FOLDER'], filename1)
-        filepath2 = os.path.join(app.config['UPLOAD_FOLDER'], filename2)
         file1.save(filepath1)
-        file2.save(filepath2)
 
-        # Almacenar los nombres de archivo en la sesión
-        session['file1'] = filename1
-        session['file2'] = filename2
-
-        # Leer el contenido de los archivos
+        # Leer el contenido del archivo 1
         text1 = leer_archivo(filepath1)
-        text2 = leer_archivo(filepath2)
+
+        # Comprobar si el archivo 2 es válido (opcional para LCS)
+        if file2 and allowed_file(file2.filename):
+            filename2 = secure_filename(file2.filename)
+            filepath2 = os.path.join(app.config['UPLOAD_FOLDER'], filename2)
+            file2.save(filepath2)
+
+            # Leer el contenido del archivo 2
+            text2 = leer_archivo(filepath2)
+            session['file2'] = filename2  # Guardar el archivo 2 en la sesión
+        else:
+            text2 = None  # Si no se sube el archivo 2, establecer como None
+
+        # Almacenar el nombre del archivo 1 en la sesión
+        session['file1'] = filename1
         
+        # Aquí puedes insertar texto en el Trie o hacer otras operaciones necesarias
         trie.insert_text(text1)
 
-
+        # Renderizar la plantilla con texto1 y texto2
         return render_template('resultado.html', texto1=text1, texto2=text2)
 
-    return 'Alguno de los archivos no es válido'
+    return 'El archivo 1 no es válido'
 
 # Ruta especifica para el Algoritmo Z
 @app.route('/z_search', methods=['POST'])
@@ -234,14 +243,19 @@ def z_search():
     filename1 = session.get('file1')
     filename2 = session.get('file2')
 
-    if not filename1 or not filename2:
-        return 'Uno de los archivos no ha sido cargado'
+    if not filename1:
+        return 'El primer archivo no ha sido cargado'
 
     filepath1 = os.path.join(app.config['UPLOAD_FOLDER'], filename1)
-    filepath2 = os.path.join(app.config['UPLOAD_FOLDER'], filename2)
-
     text1 = leer_archivo(filepath1)
-    text2 = leer_archivo(filepath2)
+
+    # Solo intenta leer text2 si filename2 no es None
+    text2 = ''
+    if filename2:  # Verificar que filename2 no sea None
+        filepath2 = os.path.join(app.config['UPLOAD_FOLDER'], filename2)
+        text2 = leer_archivo(filepath2)
+    else:
+        text2 = None  # Si no se sube el archivo 2, establecer como None
 
     positions = Z_algorithm(text1, patron)
 
@@ -249,39 +263,45 @@ def z_search():
     highlighted_text1 = ""
     last_index = 0
     
-    # Resaltar las coincidencias en el texto1
     for pos in positions:
-        # Solo resaltar si es una coincidencia exacta
         if text1[pos:pos + len(patron)] == patron:
             highlighted_text1 += text1[last_index:pos] + f'<span class="highlight">{text1[pos:pos + len(patron)]}</span>'
             last_index = pos + len(patron)
 
-    # Agregar cualquier texto restante después de la última coincidencia
     highlighted_text1 += text1[last_index:]
 
     return render_template('resultado.html', texto1=highlighted_text1, texto2=text2)
 
+
 # Ruta especifica para el algoritmo Manacher
 @app.route('/manacher_search', methods=['POST'])
 def manacher_search():
-    # Acceder a los nombres de los archivos desde la sesión
+    # Acceder al nombre del archivo 1 desde la sesión
     filename1 = session.get('file1')
-    filename2 = session.get('file2')
+    filename2 = session.get('file2')  # El archivo 2 es opcional
 
-    if not filename1 or not filename2:
-        return 'Uno de los archivos no ha sido cargado'
+    if not filename1:
+        return 'El archivo 1 no ha sido cargado'
 
     filepath1 = os.path.join(app.config['UPLOAD_FOLDER'], filename1)
-    filepath2 = os.path.join(app.config['UPLOAD_FOLDER'], filename2)
 
+    # Leer el contenido del archivo 1
     text1 = limpiar_texto(leer_archivo(filepath1))
-    text2 = limpiar_texto(leer_archivo(filepath2))
 
+    # Leer el contenido del archivo 2 solo si está presente
+    text2 = ''
+    if filename2:
+        filepath2 = os.path.join(app.config['UPLOAD_FOLDER'], filename2)
+        text2 = leer_archivo(filepath2)
+
+    # Ejecutar el algoritmo Manacher
     start, length = manacher(text1)
+    
     if length > 0:
         text1 = text1[:start] + f'<span class="highlight2">{text1[start:start + length]}</span>' + text1[start + length:]
 
     return render_template('resultado.html', texto1=text1, texto2=text2)
+
 
 # Ruta especifica para el LCS
 @app.route('/lcs', methods=['POST'])
