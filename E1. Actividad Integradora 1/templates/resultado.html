@@ -49,6 +49,9 @@
         .highlight2 {
             background-color: greenyellow;
         }
+        .highlight.active {
+            border: 2px solid red; /* Resaltar la coincidencia activa */
+        }
         ul {
             list-style: none;
             padding: 0;
@@ -80,13 +83,13 @@
             const prefix = document.getElementById('prefix').value.trim();
             const suggestionsList = document.getElementById('suggestions');
             suggestionsList.innerHTML = '';
-    
+
             if (prefix.length > 0) {
                 try {
                     const response = await fetch(`/autocomplete?prefix=${prefix}`);
                     const data = await response.json();
                     const suggestions = data.suggestions;
-    
+
                     suggestions.forEach(suggestion => {
                         const li = document.createElement('li');
                         li.textContent = suggestion;
@@ -98,7 +101,37 @@
                 }
             }
         }
-    </script>    
+    </script>  
+
+<script>
+    let currentIndex = -1; // Mantiene el índice de la ocurrencia actual
+
+    function goToNextOccurrence() {
+        const patron = document.querySelector('input[name="patron"]').value; // Obtener el patrón
+        const textElement = document.getElementById('texto1'); // Elemento donde se encuentra el texto
+        const highlightedElements = textElement.querySelectorAll('.highlight'); // Obtener todas las coincidencias resaltadas
+
+        // Si no hay coincidencias resaltadas, salir
+        if (highlightedElements.length === 0) {
+            alert('No hay coincidencias encontradas.');
+            return;
+        }
+
+        // Remover el resaltado activo
+        if (currentIndex >= 0) {
+            highlightedElements[currentIndex].classList.remove('active');
+        }
+
+        // Incrementar el índice para ir a la siguiente ocurrencia
+        currentIndex = (currentIndex + 1) % highlightedElements.length; // Volver al inicio si se excede
+
+        // Resaltar la nueva ocurrencia
+        highlightedElements[currentIndex].classList.add('active');
+
+        // Desplazar el texto resaltado al viewport
+        highlightedElements[currentIndex].scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+</script>
 </head>
 
 <body>
@@ -132,6 +165,7 @@
                 <p>Buscar patrón en archivo 1</p>
                 <input type="text" name="patron" placeholder="Ingrese el patrón a buscar" required />
                 <button type="submit">Buscar</button>
+                <button type="button" id="nextOccurrenceButton" onclick="goToNextOccurrence()">Siguiente Ocurrencia</button>
             </form>
 
             <form method="POST" action="/lcs">
