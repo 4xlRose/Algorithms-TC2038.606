@@ -28,35 +28,34 @@ def leer_archivo(archivo):
 # Implementacion 
 # Busqueda de patrones
 # Por: Pedro Sotelo Arce 
-def z_algorithm(text, pattern):
-    concat = pattern + "$" + text
-    n = len(concat)
-    Z = [0] * n
-    positions = []
-    L, R, K = 0, 0, 0
+def Z_algorithm(text, pattern):
+        concatenated = pattern + '$' + text
+        Z = [0] * len(concatenated)
+        left, right, K = 0, 0, 0
+        pattern_length = len(pattern)
+        result_positions = []
 
-    for i in range(1, n):
-        if i > R:
-            L = R = i
-            while R < n and concat[R] == concat[R - L]:
-                R += 1
-            Z[i] = R - L
-            R -= 1
-        else:
-            K = i - L
-            if Z[K] < R - i + 1:
-                Z[i] = Z[K]
+        for i in range(1, len(concatenated)):
+            if i > right:
+                left, right = i, i
+                while right < len(concatenated) and concatenated[right] == concatenated[right - left]:
+                    right += 1
+                Z[i] = right - left
+                right -= 1
             else:
-                L = i
-                while R < n and concat[R] == concat[R - L]:
-                    R += 1
-                Z[i] = R - L
-                R -= 1
-        
-        if Z[i] == len(pattern):
-            positions.append(i - len(pattern) - 1)
+                K = i - left
+                if Z[K] < right - i + 1:
+                    Z[i] = Z[K]
+                else:
+                    left = i
+                    while right < len(concatenated) and concatenated[right] == concatenated[right - left]:
+                        right += 1
+                    Z[i] = right - left
+                    right -= 1
+            if Z[i] == pattern_length:
+                result_positions.append(i - pattern_length - 1)  # Guardar posición
 
-    return positions
+        return result_positions
 #endregion
 
 
@@ -244,14 +243,23 @@ def z_search():
     text1 = leer_archivo(filepath1)
     text2 = leer_archivo(filepath2)
 
-    positions = z_algorithm(text1, patron)
+    positions = Z_algorithm(text1, patron)
+
+    # Resaltar las coincidencias en el texto1
+    highlighted_text1 = ""
+    last_index = 0
     
     # Resaltar las coincidencias en el texto1
     for pos in positions:
-        if text1[pos:pos + len(patron)] == patron:  # Solo resaltar si es una coincidencia exacta
-            text1 = text1[:pos] + f'<span class="highlight">{text1[pos:pos + len(patron)]}</span>' + text1[pos + len(patron):]
+        # Solo resaltar si es una coincidencia exacta
+        if text1[pos:pos + len(patron)] == patron:
+            highlighted_text1 += text1[last_index:pos] + f'<span class="highlight">{text1[pos:pos + len(patron)]}</span>'
+            last_index = pos + len(patron)
 
-    return render_template('resultado.html', texto1=text1, texto2=text2)
+    # Agregar cualquier texto restante después de la última coincidencia
+    highlighted_text1 += text1[last_index:]
+
+    return render_template('resultado.html', texto1=highlighted_text1, texto2=text2)
 
 # Ruta especifica para el algoritmo Manacher
 @app.route('/manacher_search', methods=['POST'])
