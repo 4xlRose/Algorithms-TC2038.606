@@ -196,7 +196,7 @@ def upload_file():
         return 'El archivo 1 debe ser enviado'
 
     file1 = request.files['file1']
-    file2 = request.files.get('file2')  # Usar get para evitar un error si no se sube file2
+    file2 = request.files.get('file2')  
 
     if file1.filename == '':
         return 'El archivo 1 debe ser seleccionado'
@@ -208,7 +208,6 @@ def upload_file():
 
         text1 = leer_archivo(filepath1)
 
-        # Verificar si se ha subido el archivo 2
         if file2 and allowed_file(file2.filename):
             filename2 = secure_filename(file2.filename)
             filepath2 = os.path.join(app.config['UPLOAD_FOLDER'], filename2)
@@ -223,7 +222,6 @@ def upload_file():
         session['file1'] = filename1
         trie.insert_text(text1)
 
-        # Renderizar la plantilla con la información de is_single_file
         return render_template('resultado.html', texto1=text1, texto2=text2, is_single_file=is_single_file)
 
     return 'El archivo 1 no es válido'
