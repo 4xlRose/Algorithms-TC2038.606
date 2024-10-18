@@ -131,7 +131,10 @@
         // Desplazar el texto resaltado al viewport
         highlightedElements[currentIndex].scrollIntoView({ behavior: "smooth", block: "center" });
     }
+
 </script>
+
+
 </head>
 
 <body>
@@ -168,12 +171,15 @@
                 <button type="button" id="nextOccurrenceButton" onclick="goToNextOccurrence()">Siguiente Ocurrencia</button>
             </form>
 
-            <form method="POST" action="/lcs">
-                <h1>Algoritmo LCS</h1>
-                <p>Subcadena común más larga</p>
-                <button type="submit">Buscar LCS</button>
+            <form action="/lcs" method="POST">
+                <h2>Algoritmo LCS</h2>
+                <button id="lcsButton" type="submit" 
+                    {% if is_single_file %} disabled title="La opción de LCS requiere dos archivos."{% endif %}>
+                    Buscar LCS
+                </button>
             </form>
-
+                        
+       
             <form action="/manacher_search" method="post">
                 <h1>Algoritmo Manacher</h1>
                 <p>Busqueda de palíndromos</p>

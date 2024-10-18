@@ -201,36 +201,30 @@ def upload_file():
     if file1.filename == '':
         return 'El archivo 1 debe ser seleccionado'
 
-    # Comprobar si el archivo 1 es válido
     if file1 and allowed_file(file1.filename):
-        # Guardar el archivo 1 con un nombre seguro
         filename1 = secure_filename(file1.filename)
         filepath1 = os.path.join(app.config['UPLOAD_FOLDER'], filename1)
         file1.save(filepath1)
 
-        # Leer el contenido del archivo 1
         text1 = leer_archivo(filepath1)
 
-        # Comprobar si el archivo 2 es válido (opcional para LCS)
+        # Verificar si se ha subido el archivo 2
         if file2 and allowed_file(file2.filename):
             filename2 = secure_filename(file2.filename)
             filepath2 = os.path.join(app.config['UPLOAD_FOLDER'], filename2)
             file2.save(filepath2)
-
-            # Leer el contenido del archivo 2
             text2 = leer_archivo(filepath2)
-            session['file2'] = filename2  # Guardar el archivo 2 en la sesión
+            session['file2'] = filename2
+            is_single_file = False
         else:
-            text2 = None  # Si no se sube el archivo 2, establecer como None
+            text2 = ""
+            is_single_file = True
 
-        # Almacenar el nombre del archivo 1 en la sesión
         session['file1'] = filename1
-        
-        # Aquí puedes insertar texto en el Trie o hacer otras operaciones necesarias
         trie.insert_text(text1)
 
-        # Renderizar la plantilla con texto1 y texto2
-        return render_template('resultado.html', texto1=text1, texto2=text2)
+        # Renderizar la plantilla con la información de is_single_file
+        return render_template('resultado.html', texto1=text1, texto2=text2, is_single_file=is_single_file)
 
     return 'El archivo 1 no es válido'
 
